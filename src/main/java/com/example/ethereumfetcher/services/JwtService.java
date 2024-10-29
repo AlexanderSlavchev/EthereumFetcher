@@ -1,11 +1,10 @@
 package com.example.ethereumfetcher.services;
 
 import com.example.ethereumfetcher.models.User;
-import com.example.exceptions.InvalidTokenException;
+import com.example.ethereumfetcher.exceptions.InvalidTokenException;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,4 +1,4 @@
-package com.example.exceptions;
+package com.example.ethereumfetcher.exceptions;
 
 public class InvalidTokenException extends RuntimeException {
     public InvalidTokenException(String message) {

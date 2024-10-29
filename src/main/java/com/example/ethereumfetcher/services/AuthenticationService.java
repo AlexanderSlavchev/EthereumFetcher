@@ -3,7 +3,7 @@ package com.example.ethereumfetcher.services;
 import com.example.ethereumfetcher.models.AuthenticationResponse;
 import com.example.ethereumfetcher.models.User;
 import com.example.ethereumfetcher.repositories.UserRepository;
-import com.example.exceptions.AuthenticationException;
+import com.example.ethereumfetcher.exceptions.AuthenticationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;

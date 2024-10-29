@@ -3,7 +3,7 @@ package com.example.ethereumfetcher.controllers.rest;
 import com.example.ethereumfetcher.models.AuthenticationResponse;
 import com.example.ethereumfetcher.models.User;
 import com.example.ethereumfetcher.services.AuthenticationService;
-import com.example.exceptions.AuthenticationException;
+import com.example.ethereumfetcher.exceptions.AuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

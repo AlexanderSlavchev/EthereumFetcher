@@ -1,8 +1,6 @@
 package com.example.ethereumfetcher.advice;
 
-import com.example.exceptions.AuthenticationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.example.ethereumfetcher.exceptions.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
