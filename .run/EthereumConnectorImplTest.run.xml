@@ -1,0 +1,24 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="EthereumConnectorImplTest" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+    <classpathModifications>
+      <entry path="$PROJECT_DIR$" />
+    </classpathModifications>
+    <module name="mid-the-ethereum-fetcher-owvxtg.test" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.example.ethereumfetcher.services.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="PACKAGE_NAME" value="com.example.ethereumfetcher.services" />
+    <option name="MAIN_CLASS_NAME" value="com.example.ethereumfetcher.services.EthereumConnectorImplTest" />
+    <option name="METHOD_NAME" value="" />
+    <option name="TEST_OBJECT" value="class" />
+    <option name="TEST_SEARCH_SCOPE">
+      <value defaultName="wholeProject" />
+    </option>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

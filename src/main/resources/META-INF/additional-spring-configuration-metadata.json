@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "jwt.privateKeyPath",
+      "type": "java.lang.String",
+      "description": "Path to the private key for JWT authentication."
+    },
+    {
+      "name": "jwt.publicKeyPath",
+      "type": "java.lang.String",
+      "description": "Path to the public key for JWT authentication."
+    }
+  ]
+}
