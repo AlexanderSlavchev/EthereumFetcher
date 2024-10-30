@@ -8,12 +8,13 @@ import com.example.ethereumfetcher.repositories.UserRepository;
 import com.example.ethereumfetcher.repositories.UserTransactionsRepository;
 import com.example.ethereumfetcher.services.contracts.EthereumConnector;
 import com.example.ethereumfetcher.services.contracts.EthereumTransactionService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class EthereumTransactionServiceImpl implements EthereumTransactionService {
+
+    private static final Logger logger = LogManager.getLogger(EthereumTransactionServiceImpl.class);
 
     @Autowired
     private EthereumConnector ethereumConnector;
@@ -39,7 +42,7 @@ public class EthereumTransactionServiceImpl implements EthereumTransactionServic
     @Transactional
     public List<EthereumTransaction> fetchAndSaveTransactions(List<String> transactionHashes) {
         for (String hash : transactionHashes) {
-            System.out.println("Processing transaction hash: " + hash);
+            logger.info("Processing transaction hash: " + hash);
             Optional<EthereumTransaction> existingTransaction = transactionRepository.findById(hash);
 
             if (!existingTransaction.isPresent()) {
@@ -52,12 +55,12 @@ public class EthereumTransactionServiceImpl implements EthereumTransactionServic
                     if (currentUser != null) {
                         addTransactionForUserIfNotExists(currentUser.getId(), hash);
                     }
-                    System.out.println("Saved transaction: " + hash);
+                    logger.info("Saved transaction: " + hash);
                 } else {
-                    System.out.println("Transaction not found on Ethereum: " + hash);
+                    logger.info("Transaction not found on Ethereum: " + hash);
                 }
             } else {
-                System.out.println("Transaction already exists in the database: " + hash);
+                logger.info("Transaction already exists in the database: " + hash);
             }
         }
         return transactionRepository.findAllById(transactionHashes);
@@ -84,12 +87,12 @@ public class EthereumTransactionServiceImpl implements EthereumTransactionServic
                 userTransaction.setTimestamp(LocalDateTime.now());
                 userTransactionsRepository.save(userTransaction);
 
-                System.out.println("Transaction added for user: " + userId);
+                logger.info("Transaction added for user: " + userId);
             } else {
-                System.out.println("Transaction not found on Ethereum: " + transactionHash);
+                logger.info("Transaction not found on Ethereum: " + transactionHash);
             }
         } else {
-            System.out.println("Transaction already exists for user: " + userId);
+            logger.info("Transaction already exists for user: " + userId);
         }
     }
 

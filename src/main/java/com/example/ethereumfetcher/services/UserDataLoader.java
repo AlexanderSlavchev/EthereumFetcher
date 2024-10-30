@@ -1,4 +1,5 @@
 package com.example.ethereumfetcher.services;
+
 import com.example.ethereumfetcher.models.User;
 import com.example.ethereumfetcher.models.enums.Role;
 import com.example.ethereumfetcher.repositories.UserRepository;

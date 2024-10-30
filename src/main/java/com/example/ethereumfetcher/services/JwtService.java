@@ -1,10 +1,12 @@
 package com.example.ethereumfetcher.services;
 
-import com.example.ethereumfetcher.models.User;
 import com.example.ethereumfetcher.exceptions.InvalidTokenException;
+import com.example.ethereumfetcher.models.User;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,11 +26,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-//    @Value("${jwt.privateKeyPath}")
-//    private String privateKeyPath;
-//
-//    @Value("${jwt.publicKeyPath}")
-//    private String publicKeyPath;
+    private static final Logger logger = LogManager.getLogger(JwtService.class);
 
     private final String privateKeyPath;
     private final String publicKeyPath;
@@ -56,6 +54,7 @@ public class JwtService {
             String username = claims.getSubject();
             return ResponseEntity.ok("Token is valid for user: " + username);
         } catch (InvalidTokenException e) {
+            logger.error("Invalid token provided", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
         }
     }
@@ -92,9 +91,7 @@ public class JwtService {
 
     private PrivateKey getPrivateKey() {
         try {
-            System.out.println("privateKeyPath: " + privateKeyPath);
-            System.out.println("--------");
-            System.out.println(Paths.get(privateKeyPath));
+            logger.info("Loading private key from path: " + privateKeyPath);
             String privateKeyPEM = new String(Files.readAllBytes(Paths.get(privateKeyPath)))
                     .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace("-----END PRIVATE KEY-----", "")
@@ -105,12 +102,14 @@ public class JwtService {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePrivate(keySpec);
         } catch (Exception e) {
+            logger.error("Error while loading private key", e);
             throw new RuntimeException("Error while loading private key", e);
         }
     }
 
     private PublicKey getPublicKey() {
         try {
+            logger.info("Loading public key from path: " + publicKeyPath);
             String publicKeyPEM = new String(Files.readAllBytes(Paths.get(publicKeyPath)))
                     .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace("-----END PUBLIC KEY-----", "")
@@ -121,6 +120,7 @@ public class JwtService {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePublic(keySpec);
         } catch (Exception e) {
+            logger.error("Error while loading public key", e);
             throw new RuntimeException("Error while loading public key", e);
         }
     }

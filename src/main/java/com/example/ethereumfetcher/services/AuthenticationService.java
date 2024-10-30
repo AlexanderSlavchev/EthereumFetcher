@@ -51,10 +51,10 @@ public class AuthenticationService {
         } catch (Exception e) {
             throw new AuthenticationException("Invalid username or password");
         }
-            User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-            String token = jwtService.generateToken(user);
+        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        String token = jwtService.generateToken(user);
 
-            return new AuthenticationResponse(token);
-        }
-
+        return new AuthenticationResponse(token);
     }
+
+}
