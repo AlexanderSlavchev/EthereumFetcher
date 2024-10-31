@@ -1,5 +1,7 @@
 package com.example.ethereumfetcher.services;
 
+import com.example.ethereumfetcher.exceptions.InvalidHexException;
+import com.example.ethereumfetcher.exceptions.InvalidTransactionException;
 import com.example.ethereumfetcher.models.EthereumTransaction;
 import com.example.ethereumfetcher.models.User;
 import com.example.ethereumfetcher.models.UserTransactions;
@@ -15,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -42,25 +45,33 @@ public class EthereumTransactionServiceImpl implements EthereumTransactionServic
     @Transactional
     public List<EthereumTransaction> fetchAndSaveTransactions(List<String> transactionHashes) {
         for (String hash : transactionHashes) {
-            logger.info("Processing transaction hash: " + hash);
-            Optional<EthereumTransaction> existingTransaction = transactionRepository.findById(hash);
+            try {
+                logger.info("Processing transaction hash: " + hash);
+                Optional<EthereumTransaction> existingTransaction = transactionRepository.findById(hash);
 
-            if (!existingTransaction.isPresent()) {
-                EthereumTransaction transaction = ethereumConnector.getTransactionByHash(hash);
-                if (transaction != null) {
-                    transactionRepository.save(transaction);
-                    User currentUser = SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-                            instanceof User ? (User) SecurityContextHolder.getContext()
-                            .getAuthentication().getPrincipal() : null;
-                    if (currentUser != null) {
-                        addTransactionForUserIfNotExists(currentUser.getId(), hash);
+                if (existingTransaction.isEmpty()) {
+                    EthereumTransaction transaction = ethereumConnector.getTransactionByHash(hash);
+                    if (transaction != null) {
+                        transactionRepository.save(transaction);
+                        User currentUser = SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                                instanceof User ? (User) SecurityContextHolder.getContext()
+                                .getAuthentication().getPrincipal() : null;
+                        if (currentUser != null) {
+                            addTransactionForUserIfNotExists(currentUser.getId(), hash);
+                        }
+                        logger.info("Saved transaction: " + hash);
+                    } else {
+                        logger.info("Transaction not found on Ethereum: " + hash);
                     }
-                    logger.info("Saved transaction: " + hash);
                 } else {
-                    logger.info("Transaction not found on Ethereum: " + hash);
+                    logger.info("Transaction already exists in the database: " + hash);
                 }
-            } else {
-                logger.info("Transaction already exists in the database: " + hash);
+            } catch (InvalidTransactionException e) {
+                logger.error("Error processing transaction hash: " + hash, e);
+                throw new InvalidTransactionException("Failed to process transaction with hash: " + hash, e);
+            } catch (InvalidHexException e) {
+                logger.error("Error with HEX for transaction hash: " + hash, e);
+                throw new InvalidHexException("Invalid HEX for transaction hash: " + hash, e);
             }
         }
         return transactionRepository.findAllById(transactionHashes);
@@ -73,26 +84,36 @@ public class EthereumTransactionServiceImpl implements EthereumTransactionServic
 
     @Transactional
     public void addTransactionForUserIfNotExists(int userId, String transactionHash) {
-        Optional<UserTransactions> existingUserTransaction = userTransactionsRepository.findByUserIdAndTransactionHash(userId, transactionHash);
+        try {
+            Optional<UserTransactions> existingUserTransaction = userTransactionsRepository.findByUserIdAndTransactionHash(userId, transactionHash);
 
-        if (!existingUserTransaction.isPresent()) {
-            EthereumTransaction transaction = ethereumConnector.getTransactionByHash(transactionHash);
+            if (!existingUserTransaction.isPresent()) {
+                EthereumTransaction transaction = ethereumConnector.getTransactionByHash(transactionHash);
 
-            if (transaction != null) {
-                transactionRepository.save(transaction);
+                if (transaction != null) {
+                    transactionRepository.save(transaction);
 
-                UserTransactions userTransaction = new UserTransactions();
-                userTransaction.setUserId(userId);
-                userTransaction.setTransactionHash(transactionHash);
-                userTransaction.setTimestamp(LocalDateTime.now());
-                userTransactionsRepository.save(userTransaction);
+                    UserTransactions userTransaction = new UserTransactions();
+                    userTransaction.setUserId(userId);
+                    userTransaction.setTransactionHash(transactionHash);
+                    userTransaction.setTimestamp(LocalDateTime.now());
+                    userTransactionsRepository.save(userTransaction);
 
-                logger.info("Transaction added for user: " + userId);
+                    logger.info("Transaction added for user: " + userId);
+                } else {
+                    logger.info("Transaction not found on Ethereum: " + transactionHash);
+                }
             } else {
-                logger.info("Transaction not found on Ethereum: " + transactionHash);
+                logger.info("Transaction already exists for user: " + userId);
+                throw new InvalidTransactionException("Failed to add transaction for user " + userId);
+
             }
-        } else {
-            logger.info("Transaction already exists for user: " + userId);
+        } catch (InvalidTransactionException e) {
+            logger.error("Error adding transaction for user " + userId + " with transaction hash: " + transactionHash, e);
+            throw new InvalidTransactionException("Failed to add transaction for user " + userId, e);
+        } catch (InvalidHexException e) {
+            logger.error("Error with HEX for transaction hash: " + transactionHash, e);
+            throw new InvalidHexException("Invalid HEX for transaction hash: " + transactionHash, e);
         }
     }
 

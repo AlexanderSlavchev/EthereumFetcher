@@ -1,14 +1,13 @@
 package com.example.ethereumfetcher.controllers.rest;
 
+import com.example.ethereumfetcher.exceptions.InvalidTransactionException;
 import com.example.ethereumfetcher.models.EthereumTransaction;
 import com.example.ethereumfetcher.models.User;
+import com.example.ethereumfetcher.services.AuthenticationService;
 import com.example.ethereumfetcher.services.JwtService;
 import com.example.ethereumfetcher.services.contracts.EthereumTransactionService;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,19 +20,24 @@ public class EthereumController {
     private EthereumTransactionService ethereumTransactionService;
 
     @Autowired
+    private AuthenticationService authenticationService;
+
+    @Autowired
     private JwtService jwtService;
 
 
     @PostMapping("/eth")
     public ResponseEntity<List<EthereumTransaction>> fetchTransactions(
             @RequestParam List<String> transactionHashes,
-            @RequestHeader(value = "AUTH_TOKEN", required = false) String authToken,
+            @RequestHeader(value = "AUTH_HEADER", required = false) String authToken,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-        ResponseEntity<List<EthereumTransaction>> UNAUTHORIZED = getListResponseEntity(authToken, authorizationHeader);
-        if (UNAUTHORIZED != null) return UNAUTHORIZED;
+        if (transactionHashes.isEmpty()) {
+            throw new InvalidTransactionException("Transaction hashes cannot be empty");
+        }
 
-        List<EthereumTransaction> transactions = ethereumTransactionService.fetchAndSaveTransactions(transactionHashes);
+        List<EthereumTransaction> transactions =
+                ethereumTransactionService.fetchAndSaveTransactions(transactionHashes);
         return ResponseEntity.ok(transactions);
     }
 
@@ -44,36 +48,14 @@ public class EthereumController {
         return ResponseEntity.ok(allTransactions);
     }
 
-
     @GetMapping("/my")
     public ResponseEntity<List<EthereumTransaction>> getUserTransactions(
-            @RequestHeader(value = "AUTH_TOKEN", required = false) String authToken,
+            @RequestHeader(value = "AUTH_HEADER", required = false) String authToken,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        User currentUser = authenticationService.tryToGetUserFromToken(authToken, authorizationHeader);
 
-        ResponseEntity<List<EthereumTransaction>> UNAUTHORIZED = getListResponseEntity(authToken, authorizationHeader);
-        if (UNAUTHORIZED != null) return UNAUTHORIZED;
-
-        User currentUser = SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-                instanceof User ? (User) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal() : null;
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-        List<EthereumTransaction> userTransactions = ethereumTransactionService.getTransactionsByUserId(currentUser.getId());
+        List<EthereumTransaction> userTransactions =
+                ethereumTransactionService.getTransactionsByUserId(currentUser.getId());
         return ResponseEntity.ok(userTransactions);
-    }
-
-
-    @Nullable
-    private ResponseEntity<List<EthereumTransaction>> getListResponseEntity(String authToken, String authorizationHeader) {
-        String token = authToken != null ? authToken : (authorizationHeader != null ?
-                authorizationHeader.replace("Bearer ", "") : null);
-
-        if (token == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-
-        jwtService.validateToken(token);
-        return null;
     }
 }

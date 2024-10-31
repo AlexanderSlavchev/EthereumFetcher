@@ -1,10 +1,12 @@
 package com.example.ethereumfetcher.services;
 
+import com.example.ethereumfetcher.exceptions.InvalidPrivateKeyException;
 import com.example.ethereumfetcher.exceptions.InvalidTokenException;
 import com.example.ethereumfetcher.models.User;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -41,21 +43,29 @@ public class JwtService {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {
-        Claims claims = extractAllClaims(token);
-        return resolver.apply(claims);
+        if (token == null || token.split("\\.").length != 3) {
+            throw new InvalidTokenException("Malformed token structure.");
+        }
+        try {
+            Claims claims = extractAllClaims(token);
+            return resolver.apply(claims);
+        } catch (MalformedJwtException e) {
+            throw new InvalidTokenException("Malformed JWT token.", e);
+        } catch (Exception e) {
+            throw new InvalidTokenException("Invalid token claims.", e);
+        }
     }
 
-    public ResponseEntity<?> validateToken(String token) {
+    public void validateToken(String token) {
         try {
             Claims claims = extractAllClaims(token);
             if (isTokenExpired(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token expired.");
+                throw new InvalidTokenException("Token expired.");
             }
-            String username = claims.getSubject();
-            return ResponseEntity.ok("Token is valid for user: " + username);
-        } catch (InvalidTokenException e) {
-            logger.error("Invalid token provided", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
+            logger.info("Token is valid for user: " + claims.getSubject());
+        } catch (Exception e) {
+            logger.error("Unexpected error during token validation", e);
+            throw new InvalidTokenException("Invalid token.", e);
         }
     }
 
@@ -103,7 +113,7 @@ public class JwtService {
             return keyFactory.generatePrivate(keySpec);
         } catch (Exception e) {
             logger.error("Error while loading private key", e);
-            throw new RuntimeException("Error while loading private key", e);
+            throw new InvalidPrivateKeyException("Error while loading private key", e);
         }
     }
 
@@ -121,7 +131,7 @@ public class JwtService {
             return keyFactory.generatePublic(keySpec);
         } catch (Exception e) {
             logger.error("Error while loading public key", e);
-            throw new RuntimeException("Error while loading public key", e);
+            throw new InvalidPrivateKeyException("Error while loading public key", e);
         }
     }
 }

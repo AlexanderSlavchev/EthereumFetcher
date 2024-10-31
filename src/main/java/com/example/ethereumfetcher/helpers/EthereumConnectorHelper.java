@@ -13,4 +13,17 @@ public class EthereumConnectorHelper {
             e.printStackTrace();
         }
     }
+
+    public static boolean isValidHex(String txHash) {
+        if (txHash == null) {
+            return false;
+        }
+        if (txHash.startsWith("0x") || txHash.startsWith("0X")) {
+            txHash = txHash.substring(2);
+        }
+        return txHash.matches("^[0-9a-fA-F]+$");
+    }
+
+
+
 }

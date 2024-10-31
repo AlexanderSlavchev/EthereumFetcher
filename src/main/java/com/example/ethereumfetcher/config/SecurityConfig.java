@@ -37,7 +37,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                        req -> req.requestMatchers(HttpMethod.POST, "/lime/authenticate")
+                        req -> req.requestMatchers(HttpMethod.GET, "/lime/my")
                                 .permitAll()
                                 .anyRequest()
                                 .permitAll()

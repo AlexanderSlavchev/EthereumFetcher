@@ -6,6 +6,7 @@ import com.example.ethereumfetcher.repositories.UserRepository;
 import com.example.ethereumfetcher.exceptions.AuthenticationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -55,6 +56,27 @@ public class AuthenticationService {
         String token = jwtService.generateToken(user);
 
         return new AuthenticationResponse(token);
+    }
+
+    public User tryToGetUserFromToken(String authToken, String authorizationHeader) {
+        if (authToken == null && authorizationHeader == null) {
+            throw new AuthenticationException("No token provided");
+        }
+
+        String token = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7);
+        } else if (authToken != null && authToken.startsWith("AUTH_TOKEN ")) {
+            token = authToken.substring(11);
+        }
+
+        if (token == null) {
+            throw new AuthenticationException("Invalid token");
+        }
+
+        String username = jwtService.extractUsername(token);
+
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 }

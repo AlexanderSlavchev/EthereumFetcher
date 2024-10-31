@@ -1,8 +1,13 @@
 package com.example.ethereumfetcher.services;
 
+import com.example.ethereumfetcher.exceptions.InvalidHexException;
+import com.example.ethereumfetcher.exceptions.InvalidTransactionException;
 import com.example.ethereumfetcher.models.EthereumTransaction;
 import com.example.ethereumfetcher.services.contracts.EthereumConnector;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import io.github.resilience4j.retry.annotation.Retry;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +19,9 @@ import org.web3j.protocol.core.methods.response.Web3ClientVersion;
 import org.web3j.protocol.http.HttpService;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+
+import static com.example.ethereumfetcher.helpers.EthereumConnectorHelper.isValidHex;
 
 @Service
 public class EthereumConnectorImpl implements EthereumConnector {
@@ -52,11 +60,12 @@ public class EthereumConnectorImpl implements EthereumConnector {
     }
 
     @Override
-    @Retry(name = "ethereumTransaction", fallbackMethod = "transactionFallback")
-    public EthereumTransaction getTransactionByHash(String transactionHash) {
+    public EthereumTransaction getTransactionByHash(String transactionHash) throws InvalidHexException,InvalidTransactionException {
+        logger.info("Fetching transaction for hash: " + transactionHash);
+        if (!isValidHex(transactionHash) || transactionHash.length() != 66) {
+            throw new InvalidHexException("Invalid transaction hash: " + transactionHash);
+        }
         try {
-            logger.info("Fetching transaction for hash: " + transactionHash);
-
             EthTransaction ethTransaction = web3.ethGetTransactionByHash(transactionHash).send();
 
             if (ethTransaction.getTransaction().isPresent()) {
@@ -80,12 +89,12 @@ public class EthereumConnectorImpl implements EthereumConnector {
                 logger.info("Transaction found on Ethereum for hash: " + transactionHash);
                 return transaction;
             } else {
-                logger.warn("Transaction not found on Ethereum for hash: " + transactionHash);
+                logger.info("Transaction not found on Ethereum for hash: " + transactionHash);
                 return null;
             }
-        } catch (Exception e) {
-            logger.error("Error while fetching transaction for hash: " + transactionHash, e);
-            throw new RuntimeException("Failed to fetch transaction for hash: " + transactionHash, e);
+        } catch (IOException e) {
+            logger.error("Error fetching transaction for hash: " + transactionHash, e);
+            throw new InvalidTransactionException("Failed to fetch transaction with hash: " + transactionHash, e);
         }
     }
 
