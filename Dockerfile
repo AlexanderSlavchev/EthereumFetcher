@@ -13,4 +13,4 @@ RUN ./gradlew --no-daemon bootJar
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "/app/build/libs/mid-the-ethereum-fetcher-owvxtg-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "/app/build/libs/EthereumFetcher-0.0.1-SNAPSHOT.jar"]
